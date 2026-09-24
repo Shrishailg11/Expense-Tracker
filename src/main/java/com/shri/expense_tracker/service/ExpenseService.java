@@ -5,6 +5,8 @@ import com.shri.expense_tracker.exception.ResourceNotFoundException;
 import com.shri.expense_tracker.model.Category;
 import com.shri.expense_tracker.model.Expense;
 import com.shri.expense_tracker.repository.ExpenseRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,10 @@ public class ExpenseService {
 
     public List<Expense> getAll() {
         return expenseRepository.findAll();
+    }
+
+    public Page<Expense> getAll(Pageable pageable) {
+        return expenseRepository.findAll(pageable);
     }
 
     public Expense getById(Long id) {

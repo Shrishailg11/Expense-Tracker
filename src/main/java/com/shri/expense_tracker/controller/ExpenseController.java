@@ -5,6 +5,10 @@ import com.shri.expense_tracker.model.Category;
 import com.shri.expense_tracker.model.Expense;
 import com.shri.expense_tracker.service.ExpenseService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +29,10 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<Expense> getAll() {
-        return expenseService.getAll();
+    public Page<Expense> getAll(
+            @PageableDefault(size = 10, sort = "date", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return expenseService.getAll(pageable);
     }
 
     @GetMapping("/{id}")

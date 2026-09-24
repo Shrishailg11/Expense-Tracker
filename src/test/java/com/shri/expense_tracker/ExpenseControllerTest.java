@@ -9,6 +9,9 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,11 +41,12 @@ class ExpenseControllerTest {
     @Test
     void getAll_shouldReturnListOfExpenses() throws Exception {
         Expense expense = new Expense("Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now());
-        when(expenseService.getAll()).thenReturn(List.of(expense));
+        Page<Expense> page = new PageImpl<>(List.of(expense));
+        when(expenseService.getAll(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/expenses"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].description").value("Groceries"));
+                .andExpect(jsonPath("$.content[0].description").value("Groceries"));
     }
 
     @Test
@@ -80,7 +84,7 @@ class ExpenseControllerTest {
 
     @Test
     void getByCategory_withInvalidCategoryInUrl_shouldReturn400WithValidValuesListed() throws Exception {
-        mockMvc.perform(get("/api/expenses/category/food")) // lowercase - the exact bug you tested manually
+        mockMvc.perform(get("/api/expenses/category/food")) // lowercase - the exact bug tested manually earlier
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(containsString("Valid values are")));
     }
