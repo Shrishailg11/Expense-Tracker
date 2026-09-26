@@ -25,5 +25,8 @@ public record ExpenseDto(
 
         @NotNull(message = "Date is required")
         @PastOrPresent(message = "Date cannot be in the future")
-        LocalDate date
+        LocalDate date,
+
+        @NotNull(message = "User ID is required")
+        Long userId
 ) {}

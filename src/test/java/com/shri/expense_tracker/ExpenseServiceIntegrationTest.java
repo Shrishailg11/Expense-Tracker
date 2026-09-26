@@ -1,10 +1,9 @@
 package com.shri.expense_tracker;
 
-
 import com.shri.expense_tracker.dto.ExpenseDto;
+import com.shri.expense_tracker.dto.ExpenseResponseDto;
 import com.shri.expense_tracker.exception.ResourceNotFoundException;
 import com.shri.expense_tracker.model.Category;
-import com.shri.expense_tracker.model.Expense;
 import com.shri.expense_tracker.service.ExpenseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Transactional // each test method's DB changes are rolled back automatically after it finishes
+@Transactional
 class ExpenseServiceIntegrationTest {
 
     @Autowired
@@ -27,13 +26,13 @@ class ExpenseServiceIntegrationTest {
 
     @Test
     void create_thenFetch_shouldReturnSameExpense() {
-        Expense created = expenseService.create(
-                new ExpenseDto("Coffee", new BigDecimal("4.50"), Category.FOOD, LocalDate.now()));
+        ExpenseResponseDto created = expenseService.create(
+                new ExpenseDto("Coffee", new BigDecimal("4.50"), Category.FOOD, LocalDate.now(), 1L));
 
-        Expense fetched = expenseService.getById(created.getId());
+        ExpenseResponseDto fetched = expenseService.getById(created.id());
 
-        assertThat(fetched.getDescription()).isEqualTo("Coffee");
-        assertThat(fetched.getCategory()).isEqualTo(Category.FOOD);
+        assertThat(fetched.description()).isEqualTo("Coffee");
+        assertThat(fetched.category()).isEqualTo(Category.FOOD);
     }
 
     @Test
@@ -44,18 +43,18 @@ class ExpenseServiceIntegrationTest {
 
     @Test
     void getByCategory_shouldOnlyReturnMatchingCategory() {
-        expenseService.create(new ExpenseDto("Bus ticket", new BigDecimal("2.00"), Category.TRAVEL, LocalDate.now()));
-        expenseService.create(new ExpenseDto("Pizza", new BigDecimal("12.00"), Category.FOOD, LocalDate.now()));
+        expenseService.create(new ExpenseDto("Bus ticket", new BigDecimal("2.00"), Category.TRAVEL, LocalDate.now(), 1L));
+        expenseService.create(new ExpenseDto("Pizza", new BigDecimal("12.00"), Category.FOOD, LocalDate.now(), 1L));
 
-        List<Expense> travelExpenses = expenseService.getByCategory(Category.TRAVEL);
+        List<ExpenseResponseDto> travelExpenses = expenseService.getByCategory(Category.TRAVEL);
 
-        assertThat(travelExpenses).allMatch(e -> e.getCategory() == Category.TRAVEL);
+        assertThat(travelExpenses).allMatch(e -> e.category() == Category.TRAVEL);
     }
 
     @Test
     void getTotalSpendByCategory_shouldSumOnlyMatchingCategory() {
-        expenseService.create(new ExpenseDto("Snacks", new BigDecimal("10.00"), Category.FOOD, LocalDate.now()));
-        expenseService.create(new ExpenseDto("Dinner", new BigDecimal("25.00"), Category.FOOD, LocalDate.now()));
+        expenseService.create(new ExpenseDto("Snacks", new BigDecimal("10.00"), Category.FOOD, LocalDate.now(), 1L));
+        expenseService.create(new ExpenseDto("Dinner", new BigDecimal("25.00"), Category.FOOD, LocalDate.now(), 1L));
 
         BigDecimal foodTotal = expenseService.getTotalSpendByCategory(Category.FOOD);
 

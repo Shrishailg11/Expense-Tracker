@@ -2,8 +2,8 @@ package com.shri.expense_tracker;
 
 import com.shri.expense_tracker.controller.ExpenseController;
 import com.shri.expense_tracker.dto.ExpenseDto;
+import com.shri.expense_tracker.dto.ExpenseResponseDto;
 import com.shri.expense_tracker.model.Category;
-import com.shri.expense_tracker.model.Expense;
 import com.shri.expense_tracker.service.ExpenseService;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -40,8 +40,9 @@ class ExpenseControllerTest {
 
     @Test
     void getAll_shouldReturnListOfExpenses() throws Exception {
-        Expense expense = new Expense("Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now());
-        Page<Expense> page = new PageImpl<>(List.of(expense));
+        ExpenseResponseDto responseDto = new ExpenseResponseDto(
+                1L, "Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now(), 1L, "Test User");
+        Page<ExpenseResponseDto> page = new PageImpl<>(List.of(responseDto));
         when(expenseService.getAll(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/expenses"))
@@ -51,7 +52,7 @@ class ExpenseControllerTest {
 
     @Test
     void create_withBlankDescription_shouldReturn400() throws Exception {
-        ExpenseDto invalidDto = new ExpenseDto("", new BigDecimal("10"), Category.FOOD, LocalDate.now());
+        ExpenseDto invalidDto = new ExpenseDto("", new BigDecimal("10"), Category.FOOD, LocalDate.now(), 1L);
 
         mockMvc.perform(post("/api/expenses")
                         .contentType("application/json")
@@ -61,7 +62,7 @@ class ExpenseControllerTest {
 
     @Test
     void create_withNegativeAmount_shouldReturn400() throws Exception {
-        ExpenseDto invalidDto = new ExpenseDto("Suspicious refund", new BigDecimal("-10"), Category.FOOD, LocalDate.now());
+        ExpenseDto invalidDto = new ExpenseDto("Suspicious refund", new BigDecimal("-10"), Category.FOOD, LocalDate.now(), 1L);
 
         mockMvc.perform(post("/api/expenses")
                         .contentType("application/json")
@@ -71,8 +72,9 @@ class ExpenseControllerTest {
 
     @Test
     void create_withValidData_shouldReturn201() throws Exception {
-        ExpenseDto dto = new ExpenseDto("Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now());
-        Expense saved = new Expense("Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now());
+        ExpenseDto dto = new ExpenseDto("Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now(), 1L);
+        ExpenseResponseDto saved = new ExpenseResponseDto(
+                1L, "Groceries", new BigDecimal("45.50"), Category.FOOD, LocalDate.now(), 1L, "Test User");
         when(expenseService.create(any(ExpenseDto.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/expenses")
@@ -84,7 +86,7 @@ class ExpenseControllerTest {
 
     @Test
     void getByCategory_withInvalidCategoryInUrl_shouldReturn400WithValidValuesListed() throws Exception {
-        mockMvc.perform(get("/api/expenses/category/food")) // lowercase - the exact bug tested manually earlier
+        mockMvc.perform(get("/api/expenses/category/food"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(containsString("Valid values are")));
     }

@@ -36,6 +36,10 @@ public class Expense {
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public Expense(String description, BigDecimal amount, Category category, LocalDate date) {
         this.description = description;
         this.amount = amount;

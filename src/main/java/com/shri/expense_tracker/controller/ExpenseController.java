@@ -1,8 +1,8 @@
 package com.shri.expense_tracker.controller;
 
 import com.shri.expense_tracker.dto.ExpenseDto;
+import com.shri.expense_tracker.dto.ExpenseResponseDto;
 import com.shri.expense_tracker.model.Category;
-import com.shri.expense_tracker.model.Expense;
 import com.shri.expense_tracker.service.ExpenseService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -29,24 +29,24 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public Page<Expense> getAll(
+    public Page<ExpenseResponseDto> getAll(
             @PageableDefault(size = 10, sort = "date", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return expenseService.getAll(pageable);
     }
 
     @GetMapping("/{id}")
-    public Expense getById(@PathVariable Long id) {
+    public ExpenseResponseDto getById(@PathVariable Long id) {
         return expenseService.getById(id);
     }
 
     @GetMapping("/category/{category}")
-    public List<Expense> getByCategory(@PathVariable Category category) {
+    public List<ExpenseResponseDto> getByCategory(@PathVariable Category category) {
         return expenseService.getByCategory(category);
     }
 
     @GetMapping("/range")
-    public List<Expense> getByDateRange(
+    public List<ExpenseResponseDto> getByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
     ) {
@@ -64,13 +64,13 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public ResponseEntity<Expense> create(@RequestBody @Valid ExpenseDto dto) {
-        Expense created = expenseService.create(dto);
+    public ResponseEntity<ExpenseResponseDto> create(@RequestBody @Valid ExpenseDto dto) {
+        ExpenseResponseDto created = expenseService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public Expense update(@PathVariable Long id, @RequestBody @Valid ExpenseDto dto) {
+    public ExpenseResponseDto update(@PathVariable Long id, @RequestBody @Valid ExpenseDto dto) {
         return expenseService.update(id, dto);
     }
 
