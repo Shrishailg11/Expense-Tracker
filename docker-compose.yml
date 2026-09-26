@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: expense-tracker-db
+    environment:
+      POSTGRES_USER: expense_user
+      POSTGRES_PASSWORD: expense_pass
+      POSTGRES_DB: expensedb
+    ports:
+      - "5433:5432"
+    volumes:
+      - expense_pgdata:/var/lib/postgresql/data
+
+volumes:
+  expense_pgdata:
