@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.shri.expense_tracker.event.ExpenseCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,10 +24,13 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public ExpenseService(ExpenseRepository expenseRepository, UserRepository userRepository) {
+    public ExpenseService(ExpenseRepository expenseRepository, UserRepository userRepository,
+                          ApplicationEventPublisher eventPublisher) {
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     private Expense findExpenseOrThrow(Long id) {
@@ -71,7 +76,12 @@ public class ExpenseService {
 
         Expense expense = new Expense(dto.description(), dto.amount(), dto.category(), dto.date());
         expense.setUser(owner);
-        return ExpenseResponseDto.from(expenseRepository.save(expense));
+        Expense saved = expenseRepository.save(expense);
+
+        eventPublisher.publishEvent(new ExpenseCreatedEvent(
+                saved.getId(), saved.getDescription(), saved.getAmount(), owner.getEmail()));
+
+        return ExpenseResponseDto.from(saved);
     }
 
     @Transactional
