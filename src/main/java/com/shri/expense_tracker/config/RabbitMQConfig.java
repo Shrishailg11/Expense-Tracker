@@ -25,6 +25,9 @@ public class RabbitMQConfig {
     public static final String DLQ = "expense.notifications.dlq";
     public static final String DLQ_ROUTING_KEY = "expense.created.dlq";
 
+    public static final String BUDGET_ALERTS_QUEUE = "budget.alerts.queue";
+    public static final String BUDGET_EXCEEDED_ROUTING_KEY = "budget.exceeded";
+
     @Bean
     public TopicExchange expenseExchange() {
         return new TopicExchange(EXCHANGE);
@@ -66,5 +69,18 @@ public class RabbitMQConfig {
     @Bean
     public MessageRecoverer messageRecoverer(RabbitTemplate rabbitTemplate) {
         return new RepublishMessageRecoverer(rabbitTemplate, DLX, DLQ_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue budgetAlertsQueue() {
+        return QueueBuilder.durable(BUDGET_ALERTS_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Binding budgetAlertsBinding(Queue budgetAlertsQueue, TopicExchange expenseExchange) {
+        return BindingBuilder.bind(budgetAlertsQueue).to(expenseExchange).with(BUDGET_EXCEEDED_ROUTING_KEY);
     }
 }

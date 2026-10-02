@@ -34,7 +34,7 @@ public class ExpenseNotificationConsumer {
 
         if (message.amount().compareTo(HIGH_VALUE_THRESHOLD) > 0) {
             System.out.printf(
-                    "[RABBITMQ NOTIFICATION] Would email %s: large expense '%s' of ₹%s logged.%n",
+                    "[RABBITMQ NOTIFICATION] Would email %s: large expense '%s' of Rs.%s logged.%n",
                     message.userEmail(), message.description(), message.amount());
         }
 

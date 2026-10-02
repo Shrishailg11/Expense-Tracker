@@ -24,4 +24,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.category = :category")
     BigDecimal getTotalSpendByCategory(@Param("category") Category category);
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user.id = :userId AND e.date BETWEEN :start AND :end")
+    BigDecimal getTotalSpendByUserAndDateRange(@Param("userId") Long userId,
+                                               @Param("start") LocalDate start,
+                                               @Param("end") LocalDate end);
 }

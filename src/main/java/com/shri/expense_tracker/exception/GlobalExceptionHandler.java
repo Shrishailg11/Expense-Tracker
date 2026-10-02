@@ -51,7 +51,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
-                "Malformed request body. Check that all fields, especially 'category', have valid values.");
+                "Malformed request body. Check that all fields have valid values and correct formats " +
+                        "(e.g. dates as yyyy-MM-dd, category as one of the defined enum values).");
         return ResponseEntity.badRequest().body(error);
     }
 
