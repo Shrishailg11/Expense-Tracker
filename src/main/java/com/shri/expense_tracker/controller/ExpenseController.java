@@ -13,6 +13,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.shri.expense_tracker.dto.MonthlySummaryResponseDto;
+import java.time.YearMonth;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -78,5 +81,14 @@ public class ExpenseController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         expenseService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/summary")
+    public MonthlySummaryResponseDto getMonthlySummary(
+            @RequestParam Long userId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
+    ) {
+        YearMonth target = (month != null) ? month : YearMonth.now();
+        return expenseService.getMonthlySummary(userId, target.toString());
     }
 }
