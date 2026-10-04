@@ -18,6 +18,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import com.shri.expense_tracker.event.ExpenseChangedEvent;
 import com.shri.expense_tracker.dto.MonthlySummaryResponseDto;
 import com.shri.expense_tracker.repository.MonthlySummaryRepository;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.time.Duration;
 
 
 import java.math.BigDecimal;
@@ -33,13 +35,15 @@ public class ExpenseService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final MonthlySummaryRepository monthlySummaryRepository;
+    private final StringRedisTemplate redisTemplate;
 
     public ExpenseService(ExpenseRepository expenseRepository, UserRepository userRepository,
-                          ApplicationEventPublisher eventPublisher, MonthlySummaryRepository monthlySummaryRepository) {
+                          ApplicationEventPublisher eventPublisher, MonthlySummaryRepository monthlySummaryRepository, StringRedisTemplate redisTemplate) {
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
         this.monthlySummaryRepository = monthlySummaryRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     private Expense findExpenseOrThrow(Long id) {
@@ -136,9 +140,21 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public MonthlySummaryResponseDto getMonthlySummary(Long userId, String month) {
+        String cacheKey = "summary:" + userId + ":" + month;
+
+        String cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached != null) {
+            System.out.println("[CACHE HIT] " + cacheKey);
+            return new MonthlySummaryResponseDto(userId, month, new BigDecimal(cached));
+        }
+
+        System.out.println("[CACHE MISS] " + cacheKey);
         BigDecimal total = monthlySummaryRepository.findByUserIdAndMonth(userId, month)
                 .map(MonthlySummary::getTotalSpent)
                 .orElse(BigDecimal.ZERO);
+
+        redisTemplate.opsForValue().set(cacheKey, total.toString(), Duration.ofHours(24));
+
         return new MonthlySummaryResponseDto(userId, month, total);
     }
 }

@@ -23,6 +23,12 @@ services:
     volumes:
       - expense_rabbitmq_data:/var/lib/rabbitmq
 
+  redis:
+    image: redis:7
+    container_name: expense-tracker-redis
+    ports:
+      - "6379:6379"
+
 volumes:
   expense_pgdata:
   expense_rabbitmq_data:
