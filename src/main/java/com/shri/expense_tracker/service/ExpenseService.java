@@ -5,6 +5,7 @@ import com.shri.expense_tracker.dto.ExpenseResponseDto;
 import com.shri.expense_tracker.exception.ResourceNotFoundException;
 import com.shri.expense_tracker.model.Category;
 import com.shri.expense_tracker.model.Expense;
+import com.shri.expense_tracker.model.MonthlySummary;
 import com.shri.expense_tracker.model.User;
 import com.shri.expense_tracker.repository.ExpenseRepository;
 import com.shri.expense_tracker.repository.UserRepository;
@@ -14,10 +15,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.shri.expense_tracker.event.ExpenseCreatedEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import com.shri.expense_tracker.event.ExpenseChangedEvent;
+import com.shri.expense_tracker.dto.MonthlySummaryResponseDto;
+import com.shri.expense_tracker.repository.MonthlySummaryRepository;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.time.YearMonth;
+import java.util.Set;
 
 @Service
 public class ExpenseService {
@@ -25,12 +32,14 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final MonthlySummaryRepository monthlySummaryRepository;
 
     public ExpenseService(ExpenseRepository expenseRepository, UserRepository userRepository,
-                          ApplicationEventPublisher eventPublisher) {
+                          ApplicationEventPublisher eventPublisher, MonthlySummaryRepository monthlySummaryRepository) {
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
+        this.monthlySummaryRepository = monthlySummaryRepository;
     }
 
     private Expense findExpenseOrThrow(Long id) {
@@ -81,22 +90,40 @@ public class ExpenseService {
         eventPublisher.publishEvent(new ExpenseCreatedEvent(
                 saved.getId(), saved.getDescription(), saved.getAmount(), owner.getEmail()));
 
+        String month = YearMonth.from(saved.getDate()).toString();
+        eventPublisher.publishEvent(new ExpenseChangedEvent(owner.getId(), Set.of(month)));
+
         return ExpenseResponseDto.from(saved);
     }
 
     @Transactional
     public ExpenseResponseDto update(Long id, ExpenseDto dto) {
         Expense existing = findExpenseOrThrow(id);
+        String oldMonth = YearMonth.from(existing.getDate()).toString();
+        Long userId = existing.getUser().getId();
+
         existing.setDescription(dto.description());
         existing.setAmount(dto.amount());
         existing.setCategory(dto.category());
         existing.setDate(dto.date());
-        return ExpenseResponseDto.from(expenseRepository.save(existing));
+        Expense saved = expenseRepository.save(existing);
+
+        String newMonth = YearMonth.from(saved.getDate()).toString();
+        Set<String> affectedMonths = oldMonth.equals(newMonth) ? Set.of(oldMonth) : Set.of(oldMonth, newMonth);
+        eventPublisher.publishEvent(new ExpenseChangedEvent(userId, affectedMonths));
+
+        return ExpenseResponseDto.from(saved);
     }
 
     @Transactional
     public void delete(Long id) {
-        expenseRepository.delete(findExpenseOrThrow(id));
+        Expense existing = findExpenseOrThrow(id);
+        String month = YearMonth.from(existing.getDate()).toString();
+        Long userId = existing.getUser().getId();
+
+        expenseRepository.delete(existing);
+
+        eventPublisher.publishEvent(new ExpenseChangedEvent(userId, Set.of(month)));
     }
 
     public BigDecimal getTotalSpend() {
@@ -105,5 +132,13 @@ public class ExpenseService {
 
     public BigDecimal getTotalSpendByCategory(Category category) {
         return expenseRepository.getTotalSpendByCategory(category);
+    }
+
+    @Transactional(readOnly = true)
+    public MonthlySummaryResponseDto getMonthlySummary(Long userId, String month) {
+        BigDecimal total = monthlySummaryRepository.findByUserIdAndMonth(userId, month)
+                .map(MonthlySummary::getTotalSpent)
+                .orElse(BigDecimal.ZERO);
+        return new MonthlySummaryResponseDto(userId, month, total);
     }
 }

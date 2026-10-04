@@ -28,6 +28,9 @@ public class RabbitMQConfig {
     public static final String BUDGET_ALERTS_QUEUE = "budget.alerts.queue";
     public static final String BUDGET_EXCEEDED_ROUTING_KEY = "budget.exceeded";
 
+    public static final String SUMMARY_RECOMPUTE_QUEUE = "summary.recompute.queue";
+    public static final String EXPENSE_CHANGED_ROUTING_KEY = "expense.changed";
+
     @Bean
     public TopicExchange expenseExchange() {
         return new TopicExchange(EXCHANGE);
@@ -82,5 +85,18 @@ public class RabbitMQConfig {
     @Bean
     public Binding budgetAlertsBinding(Queue budgetAlertsQueue, TopicExchange expenseExchange) {
         return BindingBuilder.bind(budgetAlertsQueue).to(expenseExchange).with(BUDGET_EXCEEDED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue summaryRecomputeQueue() {
+        return QueueBuilder.durable(SUMMARY_RECOMPUTE_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX)
+                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Binding summaryRecomputeBinding(Queue summaryRecomputeQueue, TopicExchange expenseExchange) {
+        return BindingBuilder.bind(summaryRecomputeQueue).to(expenseExchange).with(EXPENSE_CHANGED_ROUTING_KEY);
     }
 }
