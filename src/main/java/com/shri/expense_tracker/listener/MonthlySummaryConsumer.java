@@ -9,6 +9,7 @@ import com.shri.expense_tracker.repository.UserRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,13 +22,15 @@ public class MonthlySummaryConsumer {
     private final ExpenseRepository expenseRepository;
     private final MonthlySummaryRepository monthlySummaryRepository;
     private final UserRepository userRepository;
+    private final StringRedisTemplate redisTemplate;
 
     public MonthlySummaryConsumer(ExpenseRepository expenseRepository,
                                   MonthlySummaryRepository monthlySummaryRepository,
-                                  UserRepository userRepository) {
+                                  UserRepository userRepository, StringRedisTemplate redisTemplate) {
         this.expenseRepository = expenseRepository;
         this.monthlySummaryRepository = monthlySummaryRepository;
         this.userRepository = userRepository;
+        this.redisTemplate = redisTemplate;
     }
 
     @RabbitListener(queues = RabbitMQConfig.SUMMARY_RECOMPUTE_QUEUE)
@@ -51,6 +54,8 @@ public class MonthlySummaryConsumer {
         summary.setTotalSpent(total);
         summary.setLastUpdated(LocalDateTime.now());
         monthlySummaryRepository.save(summary);
+
+        redisTemplate.delete("summary:" + userId + ":" + month);
 
         System.out.printf("[SUMMARY RECOMPUTE] user=%d month=%s total=%s%n", userId, month, total);
     }
